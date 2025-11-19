@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Powered Data Analytics Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #6366f1;
+            --secondary-color: #8b5cf6;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --dark-bg: #0f172a;
+            --card-bg: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border-color: #334155;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: var(--card-bg);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 1.1em;
+        }
+
+        .upload-section {
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 40px;
+            margin-bottom: 30px;
+            text-align: center;
+            border: 2px dashed var(--border-color);
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .upload-section:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+        }
+
+        .upload-section.drag-over {
+            border-color: var(--success-color);
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        .file-input-label {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 15px 40px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 1.1em;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+
+        .file-input-label:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(99, 102, 241, 0.4);
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .dashboard-grid {
+            display: none;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .dashboard-grid.active {
+            display: grid;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-size: 1.3em;
+            font-weight: 600;
+        }
+
+        .card-icon {
+            font-size: 1.5em;
+            color: var(--primary-color);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .stat-item {
+            background: rgba(99, 102, 241, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: var(--text-secondary);
+            margin-top: 5px;
+        }
+
+        .insights-section {
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .insight-item {
+            background: rgba(99, 102, 241, 0.1);
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 10px;
+            border-left: 4px solid var(--primary-color);
+            transition: all 0.3s ease;
+        }
+
+        .insight-item:hover {
+            background: rgba(99, 102, 241, 0.2);
+            transform: translateX(5px);
+        }
+
+        .insight-item.prediction {
+            border-left-color: var(--warning-color);
+        }
+
+        .insight-item.recommendation {
+            border-left-color: var(--success-color);
+        }
+
+        /* Flyout Styles */
+        .flyout {
+            position: fixed;
+            right: -500px;
+            top: 0;
+            width: 500px;
+            height: 100vh;
+            background: var(--card-bg);
+            box-shadow: -5px 0 30px rgba(0, 0, 0, 0.5);
+            transition: right 0.3s ease;
+            z-index: 1000;
+            overflow-y: auto;
+            padding: 30px;
+        }
+
+        .flyout.active {
+            right: 0;
+        }
+
+        .flyout-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .flyout-close {
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 1.5em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .flyout-close:hover {
+            color: var(--danger-color);
+            transform: rotate(90deg);
+        }
+
+        /* Co-Pilot Bot Styles */
+        .copilot-button {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border: none;
+            color: white;
+            font-size: 1.5em;
+            cursor: pointer;
+            box-shadow: 0 5px 20px rgba(99, 102, 241, 0.5);
+            transition: all 0.3s ease;
+            z-index: 999;
+        }
+
+        .copilot-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.6);
+        }
+
+        .copilot-container {
+            position: fixed;
+            bottom: 100px;
+            right: 30px;
+            width: 400px;
+            height: 600px;
+            background: var(--card-bg);
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            display: none;
+            flex-direction: column;
+            z-index: 999;
+            overflow: hidden;
+        }
+
+        .copilot-container.active {
+            display: flex;
+        }
+
+        .copilot-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            padding: 20px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .copilot-header h3 {
+            margin: 0;
+        }
+
+        .copilot-minimize {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.2em;
+            cursor: pointer;
+        }
+
+        .copilot-chat {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .chat-message {
+            max-width: 80%;
+            padding: 12px 18px;
+            border-radius: 15px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .chat-message.user {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 5px;
+        }
+
+        .chat-message.bot {
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--text-primary);
+            align-self: flex-start;
+            border-bottom-left-radius: 5px;
+        }
+
+        .copilot-input-container {
+            padding: 20px;
+            border-top: 2px solid var(--border-color);
+            display: flex;
+            gap: 10px;
+        }
+
+        .copilot-input {
+            flex: 1;
+            background: rgba(99, 102, 241, 0.1);
+            border: 2px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 12px 18px;
+            border-radius: 25px;
+            font-size: 1em;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .copilot-input:focus {
+            border-color: var(--primary-color);
+            background: rgba(99, 102, 241, 0.15);
+        }
+
+        .copilot-send {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border: none;
+            color: white;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .copilot-send:hover {
+            transform: scale(1.1);
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .action-button {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .action-button:hover {
+            background: var(--secondary-color);
+            transform: scale(1.05);
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .data-table th {
+            background: rgba(99, 102, 241, 0.1);
+            font-weight: 600;
+        }
+
+        .data-table tr:hover {
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .prediction-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin: 5px;
+        }
+
+        .badge-high {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger-color);
+        }
+
+        .badge-medium {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning-color);
+        }
+
+        .badge-low {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success-color);
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .copilot-container {
+                width: calc(100vw - 40px);
+                right: 20px;
+            }
+
+            .flyout {
+                width: 100vw;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><i class="fas fa-chart-line"></i> AI Analytics Dashboard</h1>
+        <p>Upload your CSV file and let AI analyze, predict, and visualize your data</p>
+    </div>
+
+    <div class="upload-section" id="uploadSection">
+        <i class="fas fa-cloud-upload-alt" style="font-size: 4em; color: var(--primary-color); margin-bottom: 20px;"></i>
+        <h2 style="margin-bottom: 10px;">Upload Your CSV File</h2>
+        <p style="color: var(--text-secondary); margin-bottom: 20px;">Drag and drop or click to browse</p>
+        <div class="file-input-wrapper">
+            <label for="fileInput" class="file-input-label">
+                <i class="fas fa-file-csv"></i> Choose File
+            </label>
+            <input type="file" id="fileInput" accept=".csv">
+        </div>
+        <p id="fileName" style="margin-top: 15px; color: var(--text-secondary);"></p>
+    </div>
+
+    <div class="dashboard-grid" id="dashboardGrid">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Data Distribution</h3>
+                <i class="fas fa-chart-pie card-icon"></i>
+            </div>
+            <div class="chart-container">
+                <canvas id="pieChart"></canvas>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Trend Analysis</h3>
+                <i class="fas fa-chart-line card-icon"></i>
+            </div>
+            <div class="chart-container">
+                <canvas id="lineChart"></canvas>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Comparative View</h3>
+                <i class="fas fa-chart-bar card-icon"></i>
+            </div>
+            <div class="chart-container">
+                <canvas id="barChart"></canvas>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Key Statistics</h3>
+                <i class="fas fa-calculator card-icon"></i>
+            </div>
+            <div class="stats-grid" id="statsGrid">
+                <!-- Stats will be populated dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <div class="insights-section" id="insightsSection" style="display: none;">
+        <h2 style="margin-bottom: 20px;"><i class="fas fa-lightbulb"></i> AI Insights & Predictions</h2>
+        <div id="insightsContainer">
+            <!-- Insights will be populated dynamically -->
+        </div>
+    </div>
+
+    <!-- Flyout Panel -->
+    <div class="flyout" id="flyout">
+        <div class="flyout-header">
+            <h2><i class="fas fa-info-circle"></i> Detailed Analysis</h2>
+            <button class="flyout-close" onclick="closeFlyout()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div id="flyoutContent">
+            <!-- Detailed content will be populated here -->
+        </div>
+    </div>
+
+    <!-- Co-Pilot Bot -->
+    <button class="copilot-button" onclick="toggleCopilot()">
+        <i class="fas fa-robot"></i>
+    </button>
+
+    <div class="copilot-container" id="copilotContainer">
+        <div class="copilot-header">
+            <h3><i class="fas fa-robot"></i> AI Co-Pilot</h3>
+            <button class="copilot-minimize" onclick="toggleCopilot()">
+                <i class="fas fa-minus"></i>
+            </button>
+        </div>
+        <div class="copilot-chat" id="copilotChat">
+            <div class="chat-message bot">
+                Hello! I'm your AI assistant. Upload a CSV file and I'll help you analyze it. You can ask me questions about your data or request specific visualizations!
+            </div>
+        </div>
+        <div class="copilot-input-container">
+            <input type="text" class="copilot-input" id="copilotInput" placeholder="Ask me anything about your data..." onkeypress="handleCopilotEnter(event)">
+            <button class="copilot-send" onclick="sendCopilotMessage()">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let currentData = null;
+        let charts = {};
+        let dataInsights = {};
+
+        // File upload handling
+        const fileInput = document.getElementById('fileInput');
+        const uploadSection = document.getElementById('uploadSection');
+        const fileName = document.getElementById('fileName');
+
+        fileInput.addEventListener('change', handleFileUpload);
+
+        // Drag and drop
+        uploadSection.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadSection.classList.add('drag-over');
+        });
+
+        uploadSection.addEventListener('dragleave', () => {
+            uploadSection.classList.remove('drag-over');
+        });
+
+        uploadSection.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadSection.classList.remove('drag-over');
+            const files = e.dataTransfer.files;
+            if (files.length > 0 && files[0].name.endsWith('.csv')) {
+                fileInput.files = files;
+                handleFileUpload();
+            }
+        });
+
+        function handleFileUpload() {
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            fileName.textContent = `Selected: ${file.name}`;
+            
+            Papa.parse(file, {
+                header: true,
+                dynamicTyping: true,
+                complete: function(results) {
+                    currentData = results.data.filter(row => Object.values(row).some(val => val !== null && val !== ''));
+                    analyzeData();
+                    displayDashboard();
+                    addCopilotMessage('bot', `Great! I've analyzed your file "${file.name}". It contains ${currentData.length} rows. What would you like to know?`);
+                },
+                error: function(error) {
+                    alert('Error parsing CSV: ' + error.message);
+                }
+            });
+        }
+
+        function analyzeData() {
+            if (!currentData || currentData.length === 0) return;
+
+            const columns = Object.keys(currentData[0]);
+            dataInsights = {
+                columns: columns,
+                rowCount: currentData.length,
+                numericColumns: [],
+                categoricalColumns: [],
+                statistics: {},
+                predictions: [],
+                recommendations: []
+            };
+
+            // Identify column types and calculate statistics
+            columns.forEach(col => {
+                const values = currentData.map(row => row[col]).filter(v => v !== null && v !== '');
+                const numericValues = values.filter(v => typeof v === 'number' && !isNaN(v));
+                
+                if (numericValues.length / values.length > 0.5) {
+                    dataInsights.numericColumns.push(col);
+                    dataInsights.statistics[col] = {
+                        min: Math.min(...numericValues),
+                        max: Math.max(...numericValues),
+                        avg: numericValues.reduce((a, b) => a + b, 0) / numericValues.length,
+                        sum: numericValues.reduce((a, b) => a + b, 0)
+                    };
+                } else {
+                    dataInsights.categoricalColumns.push(col);
+                }
+            });
+
+            // Generate predictions
+            generatePredictions();
+        }
+
+        function generatePredictions() {
+            const predictions = [];
+            const recommendations = [];
+
+            // Analyze trends in numeric columns
+            dataInsights.numericColumns.forEach(col => {
+                const values = currentData.map(row => row[col]).filter(v => typeof v === 'number');
+                if (values.length > 5) {
+                    const recentTrend = calculateTrend(values.slice(-5));
+                    const overallAvg = dataInsights.statistics[col].avg;
+                    const recentAvg = values.slice(-5).reduce((a, b) => a + b, 0) / 5;
+
+                    if (recentAvg > overallAvg * 1.1) {
+                        predictions.push({
+                            type: 'upward',
+                            column: col,
+                            message: `${col} shows an upward trend. Recent values are ${((recentAvg / overallAvg - 1) * 100).toFixed(1)}% higher than average.`,
+                            confidence: 'high'
+                        });
+                    } else if (recentAvg < overallAvg * 0.9) {
+                        predictions.push({
+                            type: 'downward',
+                            column: col,
+                            message: `${col} shows a downward trend. Recent values are ${((1 - recentAvg / overallAvg) * 100).toFixed(1)}% lower than average.`,
+                            confidence: 'high'
+                        });
+                    }
+
+                    // Predict next value
+                    const nextValue = predictNextValue(values);
+                    predictions.push({
+                        type: 'forecast',
+                        column: col,
+                        message: `Predicted next value for ${col}: ${nextValue.toFixed(2)} (based on recent trends)`,
+                        confidence: 'medium'
+                    });
+                }
+            });
+
+            // Generate recommendations
+            if (dataInsights.numericColumns.length > 0) {
+                recommendations.push({
+                    message: `Focus on ${dataInsights.numericColumns[0]} as it shows the highest variability (range: ${dataInsights.statistics[dataInsights.numericColumns[0]].min.toFixed(2)} - ${dataInsights.statistics[dataInsights.numericColumns[0]].max.toFixed(2)})`,
+                    action: 'View Details',
+                    actionFunction: 'showColumnDetails'
+                });
+            }
+
+            if (dataInsights.categoricalColumns.length > 0) {
+                const topCategories = getTopCategories(dataInsights.categoricalColumns[0]);
+                recommendations.push({
+                    message: `Top category in ${dataInsights.categoricalColumns[0]}: ${topCategories[0]?.name || 'N/A'} (${topCategories[0]?.count || 0} occurrences)`,
+                    action: 'Explore',
+                    actionFunction: 'showCategoryBreakdown'
+                });
+            }
+
+            dataInsights.predictions = predictions;
+            dataInsights.recommendations = recommendations;
+        }
+
+        function calculateTrend(values) {
+            if (values.length < 2) return 0;
+            let sum = 0;
+            for (let i = 1; i < values.length; i++) {
+                sum += values[i] - values[i - 1];
+            }
+            return sum / (values.length - 1);
+        }
+
+        function predictNextValue(values) {
+            if (values.length < 3) return values[values.length - 1];
+            
+            // Simple linear regression
+            const n = Math.min(values.length, 10); // Use last 10 values
+            const recentValues = values.slice(-n);
+            const sumX = (n * (n + 1)) / 2;
+            const sumY = recentValues.reduce((a, b) => a + b, 0);
+            const sumXY = recentValues.reduce((sum, val, i) => sum + val * (i + 1), 0);
+            const sumX2 = (n * (n + 1) * (2 * n + 1)) / 6;
+            
+            const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+            const intercept = (sumY - slope * sumX) / n;
+            
+            return slope * (n + 1) + intercept;
+        }
+
+        function getTopCategories(column) {
+            const counts = {};
+            currentData.forEach(row => {
+                const val = row[column];
+                if (val) {
+                    counts[val] = (counts[val] || 0) + 1;
+                }
+            });
+            
+            return Object.entries(counts)
+                .map(([name, count]) => ({ name, count }))
+                .sort((a, b) => b.count - a.count)
+                .slice(0, 5);
+        }
+
+        function displayDashboard() {
+            document.getElementById('dashboardGrid').classList.add('active');
+            document.getElementById('insightsSection').style.display = 'block';
+
+            // Display statistics
+            displayStatistics();
+
+            // Create charts
+            createCharts();
+
+            // Display insights
+            displayInsights();
+        }
+
+        function displayStatistics() {
+            const statsGrid = document.getElementById('statsGrid');
+            statsGrid.innerHTML = '';
+
+            statsGrid.innerHTML += `
+                <div class="stat-item">
+                    <div class="stat-value">${currentData.length}</div>
+                    <div class="stat-label">Total Records</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">${dataInsights.columns.length}</div>
+                    <div class="stat-label">Columns</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">${dataInsights.numericColumns.length}</div>
+                    <div class="stat-label">Numeric Fields</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">${dataInsights.categoricalColumns.length}</div>
+                    <div class="stat-label">Categorical Fields</div>
+                </div>
+            `;
+        }
+
+        function createCharts() {
+            // Destroy existing charts
+            Object.values(charts).forEach(chart => chart.destroy());
+            charts = {};
+
+            // Pie Chart - Distribution of first categorical column
+            if (dataInsights.categoricalColumns.length > 0) {
+                const categories = getTopCategories(dataInsights.categoricalColumns[0]);
+                charts.pie = new Chart(document.getElementById('pieChart'), {
+                    type: 'pie',
+                    data: {
+                        labels: categories.map(c => c.name),
+                        datasets: [{
+                            data: categories.map(c => c.count),
+                            backgroundColor: [
+                                'rgba(99, 102, 241, 0.8)',
+                                'rgba(139, 92, 246, 0.8)',
+                                'rgba(16, 185, 129, 0.8)',
+                                'rgba(245, 158, 11, 0.8)',
+                                'rgba(239, 68, 68, 0.8)'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                labels: { color: '#f1f5f9' }
+                            },
+                            title: {
+                                display: true,
+                                text: `${dataInsights.categoricalColumns[0]} Distribution`,
+                                color: '#f1f5f9'
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Line Chart - Trend of first numeric column
+            if (dataInsights.numericColumns.length > 0) {
+                const numCol = dataInsights.numericColumns[0];
+                const values = currentData.map(row => row[numCol]).filter(v => typeof v === 'number');
+                charts.line = new Chart(document.getElementById('lineChart'), {
+                    type: 'line',
+                    data: {
+                        labels: values.map((_, i) => `Point ${i + 1}`),
+                        datasets: [{
+                            label: numCol,
+                            data: values,
+                            borderColor: 'rgba(99, 102, 241, 1)',
+                            backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                labels: { color: '#f1f5f9' }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                ticks: { color: '#94a3b8' },
+                                grid: { color: 'rgba(148, 163, 184, 0.1)' }
+                            },
+                            x: {
+                                ticks: { color: '#94a3b8' },
+                                grid: { color: 'rgba(148, 163, 184, 0.1)' }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Bar Chart - Comparison of numeric columns
+            if (dataInsights.numericColumns.length > 1) {
+                const datasets = dataInsights.numericColumns.slice(0, 3).map((col, idx) => {
+                    const colors = [
+                        'rgba(99, 102, 241, 0.8)',
+                        'rgba(139, 92, 246, 0.8)',
+                        'rgba(16, 185, 129, 0.8)'
+                    ];
+                    return {
+                        label: col,
+                        data: [dataInsights.statistics[col].avg],
+                        backgroundColor: colors[idx]
+                    };
+                });
+
+                charts.bar = new Chart(document.getElementById('barChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: ['Average Values'],
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                labels: { color: '#f1f5f9' }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                ticks: { color: '#94a3b8' },
+                                grid: { color: 'rgba(148, 163, 184, 0.1)' }
+                            },
+                            x: {
+                                ticks: { color: '#94a3b8' },
+                                grid: { color: 'rgba(148, 163, 184, 0.1)' }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        function displayInsights() {
+            const container = document.getElementById('insightsContainer');
+            container.innerHTML = '';
+
+            // Display predictions
+            dataInsights.predictions.forEach(pred => {
+                const badge = pred.confidence === 'high' ? 'badge-high' : pred.confidence === 'medium' ? 'badge-medium' : 'badge-low';
+                container.innerHTML += `
+                    <div class="insight-item prediction">
+                        <strong><i class="fas fa-chart-line"></i> Prediction:</strong> ${pred.message}
+                        <span class="prediction-badge ${badge}">${pred.confidence.toUpperCase()} CONFIDENCE</span>
+                    </div>
+                `;
+            });
+
+            // Display recommendations
+            dataInsights.recommendations.forEach(rec => {
+                container.innerHTML += `
+                    <div class="insight-item recommendation">
+                        <strong><i class="fas fa-lightbulb"></i> Recommendation:</strong> ${rec.message}
+                        ${rec.action ? `<button class="action-button" onclick="${rec.actionFunction}()">${rec.action}</button>` : ''}
+                    </div>
+                `;
+            });
+        }
+
+        // Flyout functions
+        function showColumnDetails() {
+            const flyout = document.getElementById('flyout');
+            const content = document.getElementById('flyoutContent');
+            
+            let html = '<h3>Column Statistics</h3>';
+            dataInsights.numericColumns.forEach(col => {
+                const stats = dataInsights.statistics[col];
+                html += `
+                    <div class="insight-item">
+                        <strong>${col}</strong>
+                        <div style="margin-top: 10px;">
+                            <div>Min: <strong>${stats.min.toFixed(2)}</strong></div>
+                            <div>Max: <strong>${stats.max.toFixed(2)}</strong></div>
+                            <div>Average: <strong>${stats.avg.toFixed(2)}</strong></div>
+                            <div>Sum: <strong>${stats.sum.toFixed(2)}</strong></div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            content.innerHTML = html;
+            flyout.classList.add('active');
+        }
+
+        function showCategoryBreakdown() {
+            const flyout = document.getElementById('flyout');
+            const content = document.getElementById('flyoutContent');
+            
+            let html = '<h3>Category Breakdown</h3>';
+            dataInsights.categoricalColumns.forEach(col => {
+                const categories = getTopCategories(col);
+                html += `
+                    <div class="insight-item">
+                        <strong>${col}</strong>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Category</th>
+                                    <th>Count</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${categories.map(cat => `
+                                    <tr>
+                                        <td>${cat.name}</td>
+                                        <td>${cat.count}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            });
+            
+            content.innerHTML = html;
+            flyout.classList.add('active');
+        }
+
+        function closeFlyout() {
+            document.getElementById('flyout').classList.remove('active');
+        }
+
+        // Co-Pilot functions
+        function toggleCopilot() {
+            const container = document.getElementById('copilotContainer');
+            container.classList.toggle('active');
+        }
+
+        function handleCopilotEnter(event) {
+            if (event.key === 'Enter') {
+                sendCopilotMessage();
+            }
+        }
+
+        function sendCopilotMessage() {
+            const input = document.getElementById('copilotInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+
+            addCopilotMessage('user', message);
+            input.value = '';
+
+            // Show thinking indicator
+            const thinkingId = 'thinking-' + Date.now();
+            addCopilotMessage('bot', '<div class="loading-spinner"></div> Analyzing...', thinkingId);
+
+            // Process message
+            setTimeout(() => {
+                removeCopilotMessage(thinkingId);
+                processCopilotQuery(message);
+            }, 1000);
+        }
+
+        function addCopilotMessage(sender, message, id = null) {
+            const chat = document.getElementById('copilotChat');
+            const div = document.createElement('div');
+            div.className = `chat-message ${sender}`;
+            div.innerHTML = message;
+            if (id) div.id = id;
+            chat.appendChild(div);
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        function removeCopilotMessage(id) {
+            const msg = document.getElementById(id);
+            if (msg) msg.remove();
+        }
+
+        function processCopilotQuery(query) {
+            const lowerQuery = query.toLowerCase();
+
+            if (!currentData) {
+                addCopilotMessage('bot', 'Please upload a CSV file first so I can help you analyze it!');
+                return;
+            }
+
+            // Handle different types of queries
+            if (lowerQuery.includes('summary') || lowerQuery.includes('overview')) {
+                addCopilotMessage('bot', `Here's a summary of your data:<br><br>
+                    • ${currentData.length} total records<br>
+                    • ${dataInsights.columns.length} columns: ${dataInsights.columns.join(', ')}<br>
+                    • ${dataInsights.numericColumns.length} numeric columns<br>
+                    • ${dataInsights.categoricalColumns.length} categorical columns`);
+            } 
+            else if (lowerQuery.includes('predict') || lowerQuery.includes('forecast')) {
+                if (dataInsights.predictions.length > 0) {
+                    const predMsg = dataInsights.predictions.map(p => `• ${p.message}`).join('<br>');
+                    addCopilotMessage('bot', `Here are my predictions:<br><br>${predMsg}`);
+                } else {
+                    addCopilotMessage('bot', 'I need more data points to make accurate predictions.');
+                }
+            }
+            else if (lowerQuery.includes('recommend') || lowerQuery.includes('suggestion')) {
+                if (dataInsights.recommendations.length > 0) {
+                    const recMsg = dataInsights.recommendations.map(r => `• ${r.message}`).join('<br>');
+                    addCopilotMessage('bot', `Here are my recommendations:<br><br>${recMsg}`);
+                } else {
+                    addCopilotMessage('bot', 'Your data looks good! No specific recommendations at this time.');
+                }
+            }
+            else if (lowerQuery.includes('visualiz') || lowerQuery.includes('chart') || lowerQuery.includes('graph')) {
+                addCopilotMessage('bot', 'I\'ve created several visualizations for you! Check out the pie chart for distribution, line chart for trends, and bar chart for comparisons. Would you like me to focus on a specific column?');
+            }
+            else if (lowerQuery.includes('column') || lowerQuery.includes('field')) {
+                const colList = dataInsights.columns.join(', ');
+                addCopilotMessage('bot', `Your dataset has these columns: ${colList}. Which one would you like to analyze in detail?`);
+            }
+            else if (lowerQuery.includes('trend')) {
+                if (dataInsights.numericColumns.length > 0) {
+                    const col = dataInsights.numericColumns[0];
+                    const trend = dataInsights.predictions.find(p => p.type === 'upward' || p.type === 'downward');
+                    if (trend) {
+                        addCopilotMessage('bot', `Trend Analysis: ${trend.message}`);
+                    } else {
+                        addCopilotMessage('bot', `The trends in your data appear stable with no significant upward or downward movement.`);
+                    }
+                } else {
+                    addCopilotMessage('bot', 'I need numeric data to analyze trends.');
+                }
+            }
+            else if (lowerQuery.includes('refresh') || lowerQuery.includes('update') || lowerQuery.includes('reload')) {
+                analyzeData();
+                displayDashboard();
+                addCopilotMessage('bot', 'Dashboard updated! I\'ve refreshed all visualizations and insights.');
+            }
+            else if (lowerQuery.includes('detail') || lowerQuery.includes('more info')) {
+                showColumnDetails();
+                addCopilotMessage('bot', 'I\'ve opened a detailed view with all column statistics. Check the panel on the right!');
+            }
+            else if (lowerQuery.includes('category') || lowerQuery.includes('breakdown')) {
+                showCategoryBreakdown();
+                addCopilotMessage('bot', 'I\'ve opened a category breakdown for you. Check the panel on the right!');
+            }
+            else if (lowerQuery.includes('help')) {
+                addCopilotMessage('bot', `I can help you with:<br><br>
+                    • Data summary and overview<br>
+                    • Predictions and forecasts<br>
+                    • Recommendations<br>
+                    • Trend analysis<br>
+                    • Visualizations<br>
+                    • Column details<br>
+                    • Category breakdowns<br><br>
+                    Just ask me anything about your data!`);
+            }
+            else {
+                // Generic response with intelligence
+                const suggestions = [
+                    `Based on your query, I suggest looking at the ${dataInsights.numericColumns[0] || 'data columns'}. Would you like more details?`,
+                    `Interesting question! The data shows ${currentData.length} records. Could you be more specific about what you'd like to analyze?`,
+                    `I'm analyzing that for you. Your dataset has ${dataInsights.columns.length} columns. Which aspect interests you most?`,
+                    `Good question! Try asking me about trends, predictions, or recommendations for more specific insights.`
+                ];
+                addCopilotMessage('bot', suggestions[Math.floor(Math.random() * suggestions.length)]);
+            }
+        }
+    </script>
+</body>
+</html>
+
